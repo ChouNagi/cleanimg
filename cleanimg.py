@@ -66,14 +66,17 @@ class Colour(object):
 		match = re.search('^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$', full_hexstring)
 		return colour
 	
-	def copy():
+	def copy(self):
 		colour = Colour()
-		colour.name = name
-		colour.red = red
-		colour.green = green
-		colour.blue = blue
-		colour.alpha = colour.alpha
+		colour.name = self.name
+		colour.red = self.red
+		colour.green = self.green
+		colour.blue = self.blue
+		colour.alpha = self.alpha
 		return colour
+	
+	def toTuple( self ):
+		return ( self.red, self.green, self.blue, alphaFloatToInt255(self.alpha) )
 
 	def __init__( self, text: str = None ):
 	
@@ -94,7 +97,14 @@ class Colour(object):
 			self.red = red
 			self.green = green
 			self.blue = blue
-			self.alpha = 1
+			if len(text) >= 4:
+				alpha = text[3]
+				if alpha < 0 or alpha > 255:
+					raise ValueError('alpha not in range [0..255]: ' + str(alpha))
+				else:
+					self.alpha = alphaInt255ToFloat(alpha)
+			else:
+				self.alpha = 1
 			return
 		
 		rgbMatch = re.findall('^rgb\( ?([0-9]+), ?([0-9]+), ([0-9]+) ?\)$', text)
@@ -252,14 +262,20 @@ TRANSPARENT = Colour('transparent')
 
 def inferOriginalColourAndTransparency( pixelColour, backgroundColour, threshold ):
 	if pixelColour == TRANSPARENT or pixelColour == backgroundColour:
-		return Colour('transparent')
+		return TRANSPARENT.copy()
 	# TODO
 	return pixelColour
+
+def alphaFloatToInt255( alphaFloat ):
+	return int(alphaFloat * 255)
+	
+def alphaInt255ToFloat( alphaInt255 ):
+	return (alphaInt255 / 255.0)
 
 def __cleanimgIterative( image, backgroundColour, threshold, pixels, checkedPixels=None ):
 	
 	if VERBOSE:
-		print(' - - iteration')
+		print(' - - iteration (' + str(len(pixels)) + ' pixels)')
 	
 	if len(pixels) == 0:
 		return
@@ -269,9 +285,29 @@ def __cleanimgIterative( image, backgroundColour, threshold, pixels, checkedPixe
 	finished = True
 	nextPixels = { }
 	for pixel in pixels:
+	
 		checkedPixels[pixel] = True
-		pixelColour = Colour(image.getpixel(pixel))
-		colour = inferOriginalColourAndTransparency(pixelColour, backgroundColour, threshold)
+		originalPixelColour = Colour(image.getpixel(pixel))
+		newPixelColour = inferOriginalColourAndTransparency(originalPixelColour, backgroundColour, threshold)
+		if originalPixelColour != newPixelColour:
+			image.putpixel(pixel, newPixelColour.toTuple())
+		
+		adjacentPixels = [ ]
+		if pixel[0] > 0:
+			adjacentPixels += [(pixel[0]-1, pixel[1])] # Left
+		if pixel[1] > 0:
+			adjacentPixels += [(pixel[0], pixel[1]-1)] # Above
+		if pixel[0] < image.width-1:
+			adjacentPixels += [(pixel[0]+1, pixel[1])] # Right
+		if pixel[1] < image.height-1:
+			adjacentPixels += [(pixel[0], pixel[1]+1)] # Below
+		
+		for adjacentPixel in adjacentPixels:
+			nextPixels[adjacentPixel] = True
+	
+	for nextPixel in list(nextPixels.keys()):
+		if nextPixel in checkedPixels:
+			del nextPixels[nextPixel]
 	
 	__cleanimgIterative(image, backgroundColour, threshold, nextPixels, checkedPixels)
 
@@ -291,20 +327,20 @@ def cleanimg( image, backgroundColour=None, guideColour=None, threshold=1 ):
 	
 	for x in range(0, image.width):
 		for y in range(0, image.height):
-			pixel = None
+			pixelColour = None
 			if inferred and guideColour is None:
 				# we only care about edge pixels
 				if x == 0 or y == 0 or x == image.width-1 or y == image.height-1:
-					pixel = image.getpixel((x,y))
+					pixelColour = image.getpixel((x,y))
 				else:
 					continue
 			else:
-				pixel = image.getpixel((x,y))
+				pixelColour = image.getpixel((x,y))
 			
 			if guideColour:
-				if Colour(pixel) == guideColour:
+				if Colour(pixelColour) == guideColour:
 					initialPixels[(x, y)] = True
-			elif Colour(pixel) == backgroundColour:
+			elif Colour(pixelColour) == backgroundColour:
 					initialPixels[(x, y)] = True
 	
 	if VERBOSE:
