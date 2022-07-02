@@ -1,5 +1,5 @@
 # cleanimg
-A horrifically efficient script that restores transparency to images.
+A horrifically inefficient script that restores transparency to images.
 
 Essentially starts off with some pixels that it thinks should be fully transparent, and then explores adjacent pixels until it finds a sufficiently opaque border and stops.
 
