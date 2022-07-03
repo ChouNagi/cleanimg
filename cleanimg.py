@@ -320,7 +320,10 @@ def inferBackgroundColour( image ):
 	return inferredColour
 
 
-TRANSPARENT = Colour('transparent') # Colour.rgba(255,0,0,0.5) 
+TRANSPARENT = Colour('transparent') # Colour.rgba(255,0,0,0.5)
+
+
+VERBOSE_PIXEL_ERROR_MAP = { }
 
 def inferOriginalColourAndTransparency( pixelColour, backgroundColour, borderColour, threshold ):
 	if pixelColour == TRANSPARENT or pixelColour == backgroundColour:
@@ -365,10 +368,22 @@ def inferOriginalColourAndTransparency( pixelColour, backgroundColour, borderCol
 		
 		if divisor > 0:
 			average = total / divisor
+		else:
+			# no divisor = border colour is perfect match for background colour
+			return pixelColour
 		
-		newPixelColour = Colour.rgba(borderColour.red, borderColour.green, borderColour.blue, average)
+		if average < 0 and average > -0.1:
+			average = 0
 		
-		return newPixelColour
+		if average >= 0:
+			newPixelColour = Colour.rgba(borderColour.red, borderColour.green, borderColour.blue, average)
+			return newPixelColour
+		else:
+			errorName = (str(pixelColour)+'_'+str(backgroundColour))
+			if VERBOSE and not (errorName in VERBOSE_PIXEL_ERROR_MAP):
+				print(str(pixelColour) + ' and backgroundColour ' + str(backgroundColour) + ' resulted in calculated alpha of ' + str(average))
+				VERBOSE_PIXEL_ERROR_MAP[errorName] = pixelColour
+			return pixelColour
 		
 	# TODO
 	return pixelColour
