@@ -26,18 +26,30 @@ This can (and should ideally) be different to the background colour.
 Allows you to mark areas that should be transparent with magenta dots for instance.
 
 #### -b / --border `COLOUR`
-Specifies the expected colour of the border, allowing for more precise calculation of partially opaque pixels.  
-Note: specifying a border colour is currently required for the script to function, as I was too lazy to finish the automated part.
+Specifies the expected colour of the border, allowing for more precise calculation of partially opaque pixels.
+If omitted, the script will attempt to infer the border colour.
 
-#### -t / --threshold `FLOAT`
-Specifies the opacity threshold, with 0 = fully transparent, and 1 = fully opaque.
-Encountering a pixel with transparency greater than or equal to the threshold will stop exploration around that pixel.  
-Note: the transparency calculation isn't perfect, so setting it above 0.9 may have unintended consequences.  
+#### -a / --artefact / --artifact / --min `FLOAT`
+Specifies the minimum opacity threshold threshold, with 0 = fully transparent, and 1 = fully opaque.
+Encountering a pixel with transparency less than or equal to the threshold will cause it to be treated as fully transparent.
+Useful for removing jpeg artifacts.
+Defaults to 0.05
+
+#### -t / --threshold / --max `FLOAT`
+Specifies the maximum opacity threshold threshold, with 0 = fully transparent, and 1 = fully opaque.
+Encountering a pixel with calculated transparency greater than or equal to the threshold will cause it to be treated as fully opaque and prevent exploration to neighbouring pixels.
 Defaults to 0.8
 
 #### -o / --overwrite
 If not set, attempting to output to a file that already exists will prompt the user if they wish to overwrite it
 If set, the prompt will be skipped, and the output file silently overwritten
+
+#### -r / --resume `STRING`
+Supplies an id for this run, and saves intermediate frame images to the work directory as it goes, allowing the conversion to be resumed.
+Supplying the same resume id as a previous abortedly resumable invocation will cause it to resume.
+
+#### -p / --optimise / --optimize
+optimizes animations by merging identical frames and combining their durations, resulting in a smaller image
 
 #### -v / --verbose
 Generates additional text output about its current progress in the conversion
