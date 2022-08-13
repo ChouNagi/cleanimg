@@ -459,8 +459,11 @@ def inferOriginalColourAndTransparency( pixelColour, backgroundColour, borderCol
 		
 		if average < 0 and average > -0.1:
 			average = 0
+			
+		if average > 1 and average < 1.1:
+			average = 1
 		
-		if average >= 0:
+		if average >= 0 and average <= 1:
 			newPixelColour = Colour.rgba(borderColour.red, borderColour.green, borderColour.blue, average)
 			return newPixelColour
 		else:
@@ -799,7 +802,7 @@ if len(cleanedImages) > 1 and optimize:
 		if len(cleanedImagesToKeep) == 0:
 			cleanedImagesToKeep.append(cleanedImage)
 			cleanedImagesToKeepDurations.append(duration)
-			if(len(cleanedImagePaths) > 0):
+			if resumeId:
 				cleanedImagePath = cleanedImagePaths[i]
 				cleanedImagePathsToKeep.append(cleanedImagePath)
 		elif compareImages(cleanedImagesToKeep[-1],cleanedImage):
@@ -807,13 +810,13 @@ if len(cleanedImages) > 1 and optimize:
 		else:
 			cleanedImagesToKeep.append(cleanedImage)
 			cleanedImagesToKeepDurations.append(duration)
-			if(len(cleanedImagePaths) > 0):
+			if resumeId:
 				cleanedImagePath = cleanedImagePaths[i]
 				cleanedImagePathsToKeep.append(cleanedImagePath)
 else:
 	cleanedImagesToKeep = cleanedImages
 	cleanedImagesToKeepDurations = durations
-
+	cleanedImagePathsToKeep = cleanedImagePaths
 
 if len(cleanedImagesToKeep) > 1 and (OUTPUT_FILE_PATH.lower().endswith('.png') or OUTPUT_FILE_PATH.lower().endswith('.apng')):
 
